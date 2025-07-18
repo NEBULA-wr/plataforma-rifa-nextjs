@@ -57,21 +57,20 @@
    /* ==========================================================================
       Layout Principal y Contenido
       ========================================================================== */
-   .app-layout {
-     position: relative;
-     min-height: 100vh;
-     display: flex;
-     flex-direction: column;
-   }
-   
+      .app-layout {
+        position: relative;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        width: 100%; /* Asegura que ocupe todo el ancho */
+        overflow-x: hidden; /* Previene cualquier scroll horizontal accidental */
+      }
+
    .main-content {
-     flex-grow: 1;
-     width: 100%;
-     max-width: 1280px;
-     margin: 0 auto;
-     padding: 0 1rem;
-   }
-   
+    width: 100%; /* Ocupa el 100% del ancho de su padre (.app-layout) */
+    padding: 0 1rem; /* Mantenemos el espaciado lateral */
+    flex-grow: 1; /* Permite que crezca para ocupar el espacio vertical entre header y footer */
+  }
    /* ==========================================================================
       Barra de Navegación (Header) - LÓGICA RESPONSIVE DEFINITIVA
       ========================================================================== */
@@ -128,27 +127,33 @@
    .nav-links-desktop {
      display: none;
    }
-   
-   /* --- Panel Lateral Móvil --- */
-   .nav-links {
-     display: flex;
-     position: fixed;
-     top: 0; right: -100%;
-     width: 85%; max-width: 340px;
-     height: 100vh;
-     background-color: var(--slate-900);
-     flex-direction: column;
-     padding: 1rem;
-     border-left: 1px solid var(--slate-700);
-     box-shadow: -10px 0 30px rgba(0,0,0,0.3);
-     transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-     z-index: 1000;
-   }
-   
-   .nav-links.active {
-     right: 0;
-   }
-   
+
+/* Panel lateral del menú móvil */
+.nav-links {
+  display: flex;
+  position: fixed;
+  top: 0;
+  right: 0; /* Lo posicionamos en el borde derecho */
+  width: 85%;
+  max-width: 340px;
+  height: 100vh;
+  background-color: var(--slate-900);
+  flex-direction: column;
+  padding: 1rem;
+  border-left: 1px solid var(--slate-700);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.3);
+  z-index: 1000;
+  visibility: hidden;
+  transform: translateX(100%); 
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0s 0.4s;
+}
+
+.nav-links.active {
+  /* Cuando está activo, lo hacemos visible y lo traemos a su posición original */
+  visibility: visible;
+  transform: translateX(0);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
    .mobile-menu-header {
      display: flex;
      justify-content: flex-end;
