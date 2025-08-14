@@ -1,6 +1,6 @@
 // pages/index.js
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -98,24 +98,34 @@ const FaqItem = ({ q, a }) => {
 export default function Home({ initialSoldTickets }) {
   const [soldTickets, setSoldTickets] = useState(initialSoldTickets);
   const [selectedTickets, setSelectedTickets] = useState([]);
+  const purchaseSectionRef = useRef(null);
   
   const prizeDetails = [ "3 peluqueros activos", "3 sillones de barbero", "3 estaciones de productos", "6 espejos", "7 lámparas LED", "Aire acondicionado 18,000 BTU", "Freezer para 10 cajas de cerveza", "Inversor con 2 baterías", "2 abanicos", "Asiento fijo para 12 clientes", "Asiento móvil para 4 personas", "Mesa de bar", "Tramería para exhibir bebidas" ];
   const faqs = [ {q: '¿Cómo sé que mi boleto fue registrado?', a: 'Recibirás una notificación y verás tu número marcado como vendido en la tabla en tiempo real.'}, {q: '¿Cuándo se realizará la rifa?', a: 'La rifa será en vivo en la sección "Ver Sorteo" al venderse los 500 boletos o al llegar la fecha límite.'}, {q: '¿Cómo elijo mis boletos?', a: 'Haz clic en todos los números que desees en la tabla. Puedes comprar varios a la vez.'}];
   const formattedSinglePrice = new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP', minimumFractionDigits: 0 }).format(5000);
 
   useEffect(() => {
-    const channel = supabase.channel('public:tickets') // <-- CORREGIDO: Canal 'public:tickets'
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets' }, // <-- CORREGIDO: tabla 'tickets'
+    const channel = supabase.channel('public:tickets')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets' },
         (payload) => {
-          if (!selectedTickets.includes(payload.new.ticket_number)) { // <-- CORREGIDO: columna 'ticket_number'
+          if (!selectedTickets.includes(payload.new.ticket_number)) {
             toast.success(`¡El boleto #${payload.new.ticket_number} acaba de ser comprado!`, { position: "bottom-right" });
           }
-          setSoldTickets(currentSoldTickets => [...currentSoldTickets, payload.new.ticket_number]); // <-- CORREGIDO: columna 'ticket_number'
+          setSoldTickets(currentSoldTickets => [...currentSoldTickets, payload.new.ticket_number]);
         }
       ).subscribe();
       
     return () => supabase.removeChannel(channel);
   }, [selectedTickets]);
+
+  useEffect(() => {
+    if (selectedTickets.length === 1 && purchaseSectionRef.current) {
+      purchaseSectionRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  }, [selectedTickets.length]);
 
   const handleTicketSelect = (number) => {
     setSelectedTickets(currentSelection =>
@@ -158,7 +168,7 @@ export default function Home({ initialSoldTickets }) {
         <TicketGrid onTicketSelect={handleTicketSelect} soldTickets={soldTickets} selectedTickets={selectedTickets} />
         
         {selectedTickets.length > 0 && (
-          <div className="card" style={{maxWidth: '42rem', margin: '3rem auto 0', textAlign: 'center'}}>
+          <div ref={purchaseSectionRef} className="card" style={{maxWidth: '42rem', margin: '3rem auto 0', textAlign: 'center'}}>
             <PurchaseForm 
               selectedTickets={selectedTickets} 
               onPurchaseComplete={handlePurchaseComplete} 
@@ -179,15 +189,15 @@ export default function Home({ initialSoldTickets }) {
 
 export async function getServerSideProps() {
   const { data, error } = await supabase
-    .from('tickets') // <-- CORREGIDO: tabla 'tickets'
-    .select('ticket_number'); // <-- CORREGIDO: columna 'ticket_number'
+    .from('tickets')
+    .select('ticket_number');
 
   if (error) {
     console.error("Error en getServerSideProps:", error.message);
     return { props: { initialSoldTickets: [] } };
   }
   
-  const initialSoldTickets = data ? data.map(t => t.ticket_number) : []; // <-- CORREGIDO: columna 'ticket_number'
+  const initialSoldTickets = data ? data.map(t => t.ticket_number) : [];
   
   return {
     props: {
